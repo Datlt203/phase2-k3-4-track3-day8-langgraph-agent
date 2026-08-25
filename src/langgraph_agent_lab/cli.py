@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Annotated
 
 import typer
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .graph import build_graph
 from .metrics import MetricsReport, metric_from_state, summarize_metrics, write_metrics
@@ -30,12 +31,29 @@ def run_scenarios(
     checkpointer = build_checkpointer(cfg.get("checkpointer", "memory"), cfg.get("database_url"))
     graph = build_graph(checkpointer=checkpointer)
     metrics = []
+    resume_success = False
     for scenario in scenarios:
         state = initial_state(scenario)
         run_config = {"configurable": {"thread_id": state["thread_id"]}}
-        final_state = graph.invoke(state, config=run_config)
-        metrics.append(metric_from_state(final_state, scenario.expected_route.value, scenario.requires_approval))
-    report = summarize_metrics(metrics)
+        started = time.perf_counter()
+        final_state = graph.invoke(state, config=run_config)  # type: ignore[call-overload]
+        elapsed_ms = int((time.perf_counter() - started) * 1000)
+        metrics.append(
+            metric_from_state(
+                final_state,
+                scenario.expected_route.value,
+                scenario.requires_approval,
+                latency_ms=elapsed_ms,
+            )
+        )
+        if checkpointer is not None:
+            try:
+                history = list(graph.get_state_history(run_config))  # type: ignore[arg-type]
+                resume_success = resume_success or len(history) > 1
+            except (AttributeError, TypeError, ValueError):
+                # Some third-party checkpointers do not expose history.
+                pass
+    report = summarize_metrics(metrics, resume_success=resume_success)
     write_metrics(report, output)
     if cfg.get("report_path"):
         write_report(report, cfg["report_path"])

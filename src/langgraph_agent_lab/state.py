@@ -6,9 +6,9 @@ Students should extend the schema only when needed. Keep state lean and serializ
 from __future__ import annotations
 
 from enum import StrEnum
+from operator import add
 from typing import Annotated, Any, TypedDict
 
-from operator import add
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -41,8 +41,8 @@ class ApprovalDecision(BaseModel):
 class AgentState(TypedDict, total=False):
     """LangGraph state.
 
-    TODO(student): decide which fields should be append-only and which should be overwritten.
-    The current annotations give a safe starting point for auditability.
+    List reducers deliberately: audit collections append while control fields
+    are overwritten by the latest node update.
     """
 
     thread_id: str
@@ -53,9 +53,13 @@ class AgentState(TypedDict, total=False):
     attempt: int
     max_attempts: int
     final_answer: str | None
-    # TODO(student): you will need additional fields for clarification, risky actions,
-    # approval decisions, and retry-loop gating. Add them as you implement nodes.
-    # Hint: check what your nodes return and what your routing functions read.
+    evaluation_result: str
+    pending_question: str | None
+    proposed_action: str | None
+    approval: dict[str, Any] | None
+    requires_approval: bool
+    should_retry: bool
+    tags: list[str]
     messages: Annotated[list[str], add]
     tool_results: Annotated[list[str], add]
     errors: Annotated[list[str], add]
@@ -90,6 +94,13 @@ def initial_state(scenario: Scenario) -> AgentState:
         "attempt": 0,
         "max_attempts": scenario.max_attempts,
         "final_answer": None,
+        "evaluation_result": "",
+        "pending_question": None,
+        "proposed_action": None,
+        "approval": None,
+        "requires_approval": scenario.requires_approval,
+        "should_retry": scenario.should_retry,
+        "tags": list(scenario.tags),
         "messages": [],
         "tool_results": [],
         "errors": [],
@@ -97,6 +108,18 @@ def initial_state(scenario: Scenario) -> AgentState:
     }
 
 
-def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:
+def make_event(
+    node: str,
+    event_type: str,
+    message: str,
+    latency_ms: int = 0,
+    **metadata: Any,  # noqa: ANN401
+) -> dict[str, Any]:
     """Create a normalized event payload."""
-    return LabEvent(node=node, event_type=event_type, message=message, metadata=metadata).model_dump()
+    return LabEvent(
+        node=node,
+        event_type=event_type,
+        message=message,
+        latency_ms=max(0, int(latency_ms)),
+        metadata=metadata,
+    ).model_dump()

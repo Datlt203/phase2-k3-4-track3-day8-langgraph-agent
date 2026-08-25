@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
 
-
-def build_checkpointer(kind: str = "memory", database_url: str | None = None) -> Any | None:
+def build_checkpointer(
+    kind: str = "memory", database_url: str | None = None
+) -> object | None:
     """Return a LangGraph checkpointer.
 
-    TODO(student): implement SQLite support for the persistence extension track.
-    The starter provides MemorySaver only — SQLite/Postgres are extension tasks.
+    MemorySaver is the zero-configuration option; SQLite is available through
+    the optional checkpoint-sqlite dependency.
 
     For SQLite:
     - pip install langgraph-checkpoint-sqlite
@@ -23,12 +23,25 @@ def build_checkpointer(kind: str = "memory", database_url: str | None = None) ->
 
         return MemorySaver()
     if kind == "sqlite":
-        raise NotImplementedError(
-            "TODO(student): implement SQLite checkpointer. "
-            "Hint: pip install langgraph-checkpoint-sqlite, then use SqliteSaver"
-        )
+        try:
+            import sqlite3
+
+            from langgraph.checkpoint.sqlite import SqliteSaver  # type: ignore[import-not-found]
+        except ImportError as exc:
+            raise RuntimeError(
+                "SQLite persistence requires the optional dependency: "
+                "pip install -e '.[sqlite]'"
+            ) from exc
+
+        path = database_url or "outputs/langgraph_checkpoints.sqlite"
+        if path.startswith("sqlite:///"):
+            path = path.removeprefix("sqlite:///")
+        connection = sqlite3.connect(path, check_same_thread=False)
+        connection.execute("PRAGMA journal_mode=WAL")
+        connection.commit()
+        return SqliteSaver(conn=connection)
     if kind == "postgres":
-        raise NotImplementedError(
-            "TODO(student): implement Postgres checkpointer (optional extension)"
+        raise RuntimeError(
+            "Postgres persistence is optional and requires the checkpoint-postgres dependency."
         )
     raise ValueError(f"Unknown checkpointer kind: {kind}")
