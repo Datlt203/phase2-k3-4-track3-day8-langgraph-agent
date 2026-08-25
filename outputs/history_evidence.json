@@ -1,0 +1,103 @@
+[
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_count": 6,
+    "checkpoint_ids": [
+      "1f1a0447-0e31-6fdf-8004-10366ea251e1",
+      "1f1a0447-0e2d-61c8-8003-2b1c8cdb9ffb",
+      "1f1a0447-0e25-6c90-8002-33b8de2ca11e",
+      "1f1a0447-0e1c-600e-8001-648af0d34451",
+      "1f1a0447-0e17-61f9-8000-85a35f790ba9",
+      "1f1a0447-0e0f-6cc0-bfff-5aa5626dede3"
+    ]
+  },
+  {
+    "thread_id": "thread-S02_tool",
+    "checkpoint_count": 8,
+    "checkpoint_ids": [
+      "1f1a0447-0e51-6cc7-8006-e5da030e1263",
+      "1f1a0447-0e51-6cc6-8005-5bdfe3100b3b",
+      "1f1a0447-0e4c-6eaf-8004-d432e10c7672",
+      "1f1a0447-0e4a-6794-8003-c25498418a92",
+      "1f1a0447-0e45-692f-8002-68e85202ce1a",
+      "1f1a0447-0e3e-6331-8001-6e11421f8a60",
+      "1f1a0447-0e3b-6c22-8000-329d031782d1",
+      "1f1a0447-0e36-6e07-bfff-b245d7933c25"
+    ]
+  },
+  {
+    "thread_id": "thread-S03_missing",
+    "checkpoint_count": 6,
+    "checkpoint_ids": [
+      "1f1a0447-0e73-6faf-8004-f96bca3e988e",
+      "1f1a0447-0e6f-6192-8003-d5b47364f04b",
+      "1f1a0447-0e6a-6360-8002-28fc5433e92f",
+      "1f1a0447-0e62-6e2f-8001-ae4e28282af8",
+      "1f1a0447-0e60-6728-8000-d0645c756790",
+      "1f1a0447-0e5b-6900-bfff-b45ced1be609"
+    ]
+  },
+  {
+    "thread_id": "thread-S04_risky",
+    "checkpoint_count": 10,
+    "checkpoint_ids": [
+      "1f1a0447-0e98-69e1-8008-1439f94ed44f",
+      "1f1a0447-0e96-6288-8007-92cdd7177684",
+      "1f1a0447-0e8e-6d6c-8006-76eac91bbf35",
+      "1f1a0447-0e8e-6d6b-8005-fcf0882efbef",
+      "1f1a0447-0e89-6f26-8004-d17e2ef2681b",
+      "1f1a0447-0e89-6f25-8003-933fcb76e422",
+      "1f1a0447-0e85-6114-8002-ae8b6ea8feb8",
+      "1f1a0447-0e80-62f5-8001-c0740297ba71",
+      "1f1a0447-0e7b-64bf-8000-fbe61973dbc6",
+      "1f1a0447-0e78-6db4-bfff-1d14731292e7"
+    ]
+  },
+  {
+    "thread_id": "thread-S05_error",
+    "checkpoint_count": 12,
+    "checkpoint_ids": [
+      "1f1a0447-0ec5-6d4c-800a-d8bd94eb54e7",
+      "1f1a0447-0ec3-6643-8009-1fea7deba0e2",
+      "1f1a0447-0ebe-680b-8008-12e2ba9449ea",
+      "1f1a0447-0eba-6ce4-8007-57d726ed2f0a",
+      "1f1a0447-0eb8-65a6-8006-c8d6af2c4a46",
+      "1f1a0447-0eb5-6ec7-8005-2fc862c3696f",
+      "1f1a0447-0eb3-67c4-8004-7b68ab466d04",
+      "1f1a0447-0eb1-607f-8003-1368c8fd0526",
+      "1f1a0447-0eac-625a-8002-d911fe0e1a98",
+      "1f1a0447-0ea7-643f-8001-cb6ce6b5fcc2",
+      "1f1a0447-0ea2-6629-8000-eabcb102ee56",
+      "1f1a0447-0e9f-6f16-bfff-96a2627e50b9"
+    ]
+  },
+  {
+    "thread_id": "thread-S06_delete",
+    "checkpoint_count": 10,
+    "checkpoint_ids": [
+      "1f1a0447-0ef0-6879-8008-432166ce16e2",
+      "1f1a0447-0eef-643a-8007-ec859bd1c0ce",
+      "1f1a0447-0ee8-6af9-8006-98f9ec4bcf59",
+      "1f1a0447-0ee7-6503-8005-df2f662e8a21",
+      "1f1a0447-0ee4-68cf-8004-2dd63be89f1e",
+      "1f1a0447-0ee1-6ce1-8003-4c7785d477cf",
+      "1f1a0447-0edf-610d-8002-934321e77ecb",
+      "1f1a0447-0ed6-6edc-8001-e89b439438cc",
+      "1f1a0447-0ed4-67df-8000-0185cf9f8cde",
+      "1f1a0447-0ecf-6982-bfff-8f04204757e4"
+    ]
+  },
+  {
+    "thread_id": "thread-S07_dead_letter",
+    "checkpoint_count": 7,
+    "checkpoint_ids": [
+      "1f1a0447-0f0c-6708-8005-cfcb1d08e625",
+      "1f1a0447-0f0b-60d8-8004-8a6c7d5ddb20",
+      "1f1a0447-0f09-6725-8003-f122193539b6",
+      "1f1a0447-0f05-6c23-8002-5d3c2c52bd38",
+      "1f1a0447-0efe-66ba-8001-c975fb66b749",
+      "1f1a0447-0efb-6fa7-8000-d4c051802a01",
+      "1f1a0447-0ef9-689d-bfff-c0a2d11114bf"
+    ]
+  }
+]

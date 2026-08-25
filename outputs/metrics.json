@@ -16,7 +16,7 @@
       "interrupt_count": 0,
       "approval_required": false,
       "approval_observed": false,
-      "latency_ms": 3509,
+      "latency_ms": 20,
       "errors": []
     },
     {
@@ -29,7 +29,7 @@
       "interrupt_count": 0,
       "approval_required": false,
       "approval_observed": false,
-      "latency_ms": 7572,
+      "latency_ms": 13,
       "errors": []
     },
     {
@@ -42,7 +42,7 @@
       "interrupt_count": 0,
       "approval_required": false,
       "approval_observed": false,
-      "latency_ms": 2661,
+      "latency_ms": 10,
       "errors": []
     },
     {
@@ -55,7 +55,7 @@
       "interrupt_count": 1,
       "approval_required": true,
       "approval_observed": true,
-      "latency_ms": 2652,
+      "latency_ms": 13,
       "errors": []
     },
     {
@@ -68,7 +68,7 @@
       "interrupt_count": 0,
       "approval_required": false,
       "approval_observed": false,
-      "latency_ms": 2661,
+      "latency_ms": 16,
       "errors": [
         "Transient failure; retry attempt 1/3",
         "Transient failure; retry attempt 2/3"
@@ -84,7 +84,7 @@
       "interrupt_count": 1,
       "approval_required": true,
       "approval_observed": true,
-      "latency_ms": 2704,
+      "latency_ms": 14,
       "errors": []
     },
     {
@@ -97,7 +97,7 @@
       "interrupt_count": 0,
       "approval_required": false,
       "approval_observed": false,
-      "latency_ms": 1191,
+      "latency_ms": 9,
       "errors": [
         "Transient failure; retry attempt 1/1"
       ]

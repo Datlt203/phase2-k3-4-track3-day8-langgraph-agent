@@ -10,7 +10,7 @@ from typing import Annotated
 import typer
 import yaml  # type: ignore[import-untyped]
 
-from .graph import build_graph
+from .graph import build_graph, export_mermaid
 from .metrics import MetricsReport, metric_from_state, summarize_metrics, write_metrics
 from .persistence import build_checkpointer
 from .report import write_report
@@ -32,6 +32,7 @@ def run_scenarios(
     graph = build_graph(checkpointer=checkpointer)
     metrics = []
     resume_success = False
+    history_evidence: list[dict[str, object]] = []
     for scenario in scenarios:
         state = initial_state(scenario)
         run_config = {"configurable": {"thread_id": state["thread_id"]}}
@@ -50,14 +51,44 @@ def run_scenarios(
             try:
                 history = list(graph.get_state_history(run_config))  # type: ignore[arg-type]
                 resume_success = resume_success or len(history) > 1
+                checkpoint_ids = []
+                for snapshot in history:
+                    snapshot_config = getattr(snapshot, "config", {})
+                    configurable = (
+                        snapshot_config.get("configurable", {})
+                        if isinstance(snapshot_config, dict)
+                        else {}
+                    )
+                    if isinstance(configurable, dict) and configurable.get("checkpoint_id"):
+                        checkpoint_ids.append(str(configurable["checkpoint_id"]))
+                history_evidence.append(
+                    {
+                        "thread_id": state["thread_id"],
+                        "checkpoint_count": len(history),
+                        "checkpoint_ids": checkpoint_ids,
+                    }
+                )
             except (AttributeError, TypeError, ValueError):
                 # Some third-party checkpointers do not expose history.
                 pass
     report = summarize_metrics(metrics, resume_success=resume_success)
     write_metrics(report, output)
+    history_path = output.parent / "history_evidence.json"
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history_path.write_text(
+        json.dumps(history_evidence, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     if cfg.get("report_path"):
         write_report(report, cfg["report_path"])
     typer.echo(f"Wrote metrics to {output}")
+
+
+@app.command("export-graph")
+def export_graph_command(output: Annotated[Path, typer.Option("--output")]) -> None:
+    """Export Mermaid from the compiled graph topology."""
+    graph = build_graph(checkpointer=None)
+    path = export_mermaid(graph, output)
+    typer.echo(f"Wrote Mermaid graph to {path}")
 
 
 @app.command("validate-metrics")

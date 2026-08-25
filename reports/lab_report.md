@@ -29,6 +29,7 @@ when no provider is configured, so local CI can still exercise graph behavior.
 | `errors` | append | retain retry/dead-letter evidence |
 | `events` | append | audit trail and node metrics |
 | `route`, `attempt`, `evaluation_result` | overwrite | current control state |
+| `evaluation_reason`, `judge_calls` | overwrite | judge audit/control state |
 | `pending_question`, `proposed_action`, `approval` | overwrite | current user/action decision |
 | `final_answer` | overwrite | latest response presented to the user |
 
@@ -68,13 +69,32 @@ Each run uses a stable `thread_id` derived from the scenario ID and invokes the
 graph with a configurable checkpointer. The CLI inspects state history after
 each run and records `resume_success` when history is available. Memory
 checkpoints are used by the sample config; the implementation also supports
-SQLite with WAL mode via `build_checkpointer("sqlite", ...)`.
+SQLite with WAL mode via `build_checkpointer("sqlite", ...)`. The CLI writes
+checkpoint IDs and counts to `outputs/history_evidence.json` without copying
+ticket content or secrets.
 
 ## 7. Extension work
 
-Implemented SQLite checkpointer support, LangGraph interrupt-based approval,
-per-node latency metadata, state-history evidence, and automatic Markdown
-report generation.
+The core graph remains the baseline: heuristic evaluation, mock approval by
+default, bounded retry, and MemorySaver in the sample config. The selected
+extensions are opt-in or additive, so the baseline CI path does not require an
+online service.
+
+| Extension | Baseline | Change | Check | Evidence | Limitation |
+|---|---|---|---|---|---|
+| LLM-as-judge | heuristic | structured verdict + timeout/cost guard | judge unit test | event metadata + reason | opt-in; provider cost |
+| Real HITL | mock approval | interrupt + Command(resume) | HITL unit test | pause/resume on same thread | interactive only |
+| Time travel | final state only | history replay | history unit test | history_evidence.json | no UI fork |
+| Mermaid | target diagram | compiled graph export | export test/command | outputs/graph.mmd | topology only |
+| SQLite recovery | MemorySaver | WAL SQLite adapter | process-restart test | recovery test | optional dependency |
+
+The SQLite process-restart test passed in the verification environment after
+installing `langgraph-checkpoint-sqlite`. On a clean environment without that
+optional extra, the test is skipped with an explicit dependency message.
+
+Parallel `Send()`, Streamlit UI, and Postgres were intentionally not enabled:
+they are optional extensions and would add concurrency or service dependencies
+without improving the stable core contract.
 
 ## 8. Improvement plan
 

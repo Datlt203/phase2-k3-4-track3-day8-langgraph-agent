@@ -10,7 +10,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 import time
+from collections.abc import Callable
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -25,6 +27,13 @@ class ClassificationResult(BaseModel):
     route: Literal["simple", "tool", "missing_info", "risky", "error"]
     risk_level: Literal["low", "medium", "high"] = "low"
     rationale: str = Field(default="", max_length=500)
+
+
+class EvaluationVerdict(BaseModel):
+    """Bounded structured verdict returned by the optional LLM judge."""
+
+    verdict: Literal["success", "needs_retry"]
+    reason: str = Field(default="", max_length=500)
 
 
 def _response_text(response: Any) -> str:  # noqa: ANN401
@@ -101,6 +110,42 @@ def _timed_event(
         latency_ms=int((time.perf_counter() - started) * 1000),
         **metadata,
     )
+
+
+def _invoke_with_timeout(
+    call: Callable[[], Any], timeout_seconds: float
+) -> tuple[Any | None, str | None]:  # noqa: ANN401
+    """Run an optional judge call with a hard wall-clock budget."""
+    result: dict[str, Any] = {}
+
+    def worker() -> None:
+        try:
+            result["value"] = call()
+        except Exception as exc:  # pragma: no cover - provider-specific failures
+            result["error"] = type(exc).__name__
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    thread.join(max(0.0, timeout_seconds))
+    if thread.is_alive():
+        return None, "timeout"
+    if "error" in result:
+        return None, str(result["error"])
+    return result.get("value"), None
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return max(0, int(os.getenv(name, str(default))))
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return max(0.05, float(os.getenv(name, str(default))))
+    except ValueError:
+        return default
 
 
 def intake_node(state: AgentState) -> dict:
@@ -203,19 +248,73 @@ def tool_node(state: AgentState) -> dict:
 
 
 def evaluate_node(state: AgentState) -> dict:
-    """Evaluate the latest tool result and drive the retry gate."""
+    """Evaluate the latest tool result and drive the retry gate.
+
+    The heuristic remains the safe default for CI. Setting
+    ``LLM_JUDGE_ENABLED=true`` enables a structured judge with a timeout and a
+    per-run call budget; any judge failure falls back to the same heuristic.
+    """
     started = time.perf_counter()
     latest = (state.get("tool_results") or [""])[-1]
-    needs_retry = latest.lstrip().upper().startswith("ERROR:")
-    evaluation = "needs_retry" if needs_retry else "success"
+    heuristic = "needs_retry" if latest.lstrip().upper().startswith("ERROR:") else "success"
+    evaluation = heuristic
+    reason = "heuristic error-prefix check"
+    source = "heuristic"
+    judge_calls = int(state.get("judge_calls", 0))
+    judge_enabled = os.getenv("LLM_JUDGE_ENABLED", "").casefold() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    max_calls = _env_int("LLM_JUDGE_MAX_CALLS", 2)
+    if judge_enabled and judge_calls < max_calls:
+        timeout_seconds = _env_float("LLM_JUDGE_TIMEOUT_SECONDS", 5.0)
+        prompt = (
+            "Evaluate this tool result. Return verdict=needs_retry only if the "
+            "result clearly reports a transient failure; otherwise return success. "
+            "Give a short reason. Tool result: "
+            f"{latest}"
+        )
+        raw, failure = _invoke_with_timeout(
+            lambda: get_llm()
+            .with_structured_output(EvaluationVerdict)
+            .invoke(prompt),
+            timeout_seconds,
+        )
+        judge_calls += 1
+        if failure:
+            reason = f"judge fallback: {failure}"
+        else:
+            try:
+                verdict = (
+                    raw
+                    if isinstance(raw, EvaluationVerdict)
+                    else EvaluationVerdict.model_validate(raw)
+                )
+                evaluation = verdict.verdict
+                reason = verdict.reason or "structured judge verdict"
+                source = "llm_judge"
+            except Exception as exc:  # pragma: no cover - malformed provider output
+                reason = f"judge fallback: {type(exc).__name__}"
+    elif judge_enabled:
+        reason = f"judge cost guard reached ({max_calls} calls)"
+    else:
+        reason = "LLM judge disabled; heuristic used"
     return {
         "evaluation_result": evaluation,
+        "evaluation_reason": reason,
+        "judge_calls": judge_calls,
         "events": [
             _timed_event(
                 "evaluate",
                 "completed",
                 f"tool result evaluated as {evaluation}",
                 started,
+                source=source,
+                reason=reason,
+                judge_calls=judge_calls,
+                judge_max_calls=max_calls,
             )
         ],
     }

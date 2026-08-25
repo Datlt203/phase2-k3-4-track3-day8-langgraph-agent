@@ -6,6 +6,7 @@ that check schema/metrics can run even if students are still debugging graph wir
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .state import AgentState
@@ -108,3 +109,11 @@ def build_graph(checkpointer: object | None = None) -> CompiledStateGraph:
     workflow.add_edge("finalize", END)
 
     return workflow.compile(checkpointer=checkpointer)  # type: ignore[arg-type]
+
+
+def export_mermaid(graph: CompiledStateGraph, output_path: str | Path) -> Path:
+    """Export the compiled graph, rather than a hand-written approximation."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(graph.get_graph().draw_mermaid(), encoding="utf-8")
+    return path

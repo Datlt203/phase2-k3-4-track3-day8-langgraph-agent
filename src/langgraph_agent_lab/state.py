@@ -57,6 +57,8 @@ class AgentState(TypedDict, total=False):
     pending_question: str | None
     proposed_action: str | None
     approval: dict[str, Any] | None
+    evaluation_reason: str
+    judge_calls: int
     requires_approval: bool
     should_retry: bool
     tags: list[str]
@@ -98,6 +100,8 @@ def initial_state(scenario: Scenario) -> AgentState:
         "pending_question": None,
         "proposed_action": None,
         "approval": None,
+        "evaluation_reason": "",
+        "judge_calls": 0,
         "requires_approval": scenario.requires_approval,
         "should_retry": scenario.should_retry,
         "tags": list(scenario.tags),

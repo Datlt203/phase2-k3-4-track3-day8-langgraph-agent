@@ -2,7 +2,7 @@
 
 Build a production-style LangGraph workflow for a support-ticket agent with state management, conditional routing, retry loops, human-in-the-loop approval, persistence, and metrics.
 
-This is a **starter skeleton**. All node implementations, routing logic, and graph wiring are left as `TODO(student)` — you must build them from scratch.
+The core workflow and selected optional extensions are implemented in this workspace.
 
 ---
 
@@ -137,7 +137,7 @@ cp .env.example .env
 # Edit .env — set your API key
 
 # Verify setup
-make test  # some tests will fail until you implement TODOs
+make test  # core tests; graph smoke tests use the configured LLM provider
 ```
 
 ---
@@ -189,13 +189,28 @@ make test  # some tests will fail until you implement TODOs
 
 ### Phase 5: Extensions (240+ min) — push toward 90+
 
-Pick one or more:
-- **Parallel fan-out**: Use `Send()` for concurrent tool calls
-- **Real HITL**: `LANGGRAPH_INTERRUPT=true` with `interrupt()`
-- **Streamlit UI**: Build approval/reject interface
-- **Time travel**: `get_state_history()` replay
-- **Crash recovery**: SQLite checkpoint survives process kill
-- **Graph diagram**: `graph.get_graph().draw_mermaid()`
+The implementation includes additive, offline-verifiable extensions:
+
+- **LLM-as-judge**: set `LLM_JUDGE_ENABLED=true`; structured verdicts include a
+  reason, timeout fallback, and `LLM_JUDGE_MAX_CALLS` cost guard.
+- **Real HITL**: set `LANGGRAPH_INTERRUPT=true`; resume with
+  `Command(resume=...)` using the same `thread_id`.
+- **Time travel**: read `get_state_history()` and replay a selected checkpoint.
+- **SQLite recovery**: install `.[sqlite]` and verify process restart with the
+  extension test.
+- **Graph diagram**: export the compiled topology with the command below.
+
+Extension proof:
+
+```powershell
+python -m pytest tests/test_extensions.py -q
+python -m langgraph_agent_lab.cli export-graph --output outputs/graph.mmd
+```
+
+`outputs/history_evidence.json`, `outputs/graph.mmd`, and
+`tests/test_extensions.py` are the corresponding evidence artifacts. Parallel
+`Send()`, Streamlit UI, and Postgres are intentionally left out so the core
+CI path remains deterministic and service-independent.
 
 ---
 
@@ -215,7 +230,7 @@ Pick one or more:
 
 ## Submission checklist
 
-- [ ] All `TODO(student)` sections implemented
+- [x] All core implementation sections completed
 - [ ] `.env` configured with LLM API key
 - [ ] `classify_node` uses real LLM call with structured output
 - [ ] `answer_node` uses real LLM call for grounded responses
